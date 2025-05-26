@@ -6,6 +6,7 @@ import { ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { ContactSection } from "@/components/landing/ContactSection";
 import { CTASection } from "@/components/landing/CTASection";
 import { Footer } from "@/components/landing/Footer";
 
@@ -15,6 +16,7 @@ const Index = () => {
       <HeroSection />
       <FeaturesSection />
       <CTASection />
+      <ContactSection />
       <Footer />
     </div>
   );
