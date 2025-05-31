@@ -9,14 +9,14 @@ import { ArrowLeft, Brain, Lightbulb, Star, BookOpen, Trophy } from "lucide-reac
 import { Progress } from "@/components/ui/progress";
 
 interface QuizQuestion {
-  question: string;
+  question_text: string;
   options: {
     A: string;
     B: string;
     C: string;
     D: string;
   };
-  correct_answer: string;
+  correct_option: string;
   explanation: string;
 }
 
@@ -75,16 +75,18 @@ const QuizMate = () => {
     }, 5000); // Changed from 2000 to 5000 (5 seconds)
 
     try {
+      const inputParams = {
+        subject: subject,
+        topic: topic,
+        number_of_questions: parseInt(numQuestions),
+        difficulty_level: difficulty
+      };
+
       const requestBody = {
         user_id: "rahultejmora18@gmail.com",
         agent_id: "683b3269c446a3a00dfefca0",
         session_id: `quiz-${Date.now()}`,
-        message: JSON.stringify({
-          subject: subject,
-          topic: topic,
-          number_of_questions: parseInt(numQuestions),
-          difficulty_level: difficulty
-        })
+        message: JSON.stringify(inputParams)
       };
 
       console.log("Sending request to Lyzr AI:", requestBody);
@@ -159,14 +161,14 @@ const QuizMate = () => {
             difficulty_level: difficulty
           },
           questions: Array.from({ length: parseInt(numQuestions) }, (_, i) => ({
-            question: `Sample question ${i + 1} about ${topic} in ${subject}?`,
+            question_text: `Sample question ${i + 1} about ${topic} in ${subject}?`,
             options: {
               A: "Option A",
               B: "Option B", 
               C: "Option C",
               D: "Option D"
             },
-            correct_answer: "A",
+            correct_option: "A",
             explanation: `This is the explanation for question ${i + 1} about ${topic}.`
           }))
         };
@@ -190,7 +192,7 @@ const QuizMate = () => {
     if (!quiz) return 0;
     let correctAnswers = 0;
     quiz.questions.forEach((question, index) => {
-      if (userAnswers[index] === question.correct_answer) {
+      if (userAnswers[index] === question.correct_option) {
         correctAnswers++;
       }
     });
@@ -273,7 +275,7 @@ const QuizMate = () => {
                       <Card key={index} className="border-2 border-gray-200">
                         <CardHeader>
                           <CardTitle className="text-lg text-gray-800">
-                            Question {index + 1}: {question.question}
+                            Question {index + 1}: {question.question_text}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -282,9 +284,9 @@ const QuizMate = () => {
                               <div
                                 key={key}
                                 className={`p-4 rounded-lg border-2 ${
-                                  key === question.correct_answer
+                                  key === question.correct_option
                                     ? 'border-green-500 bg-green-50'
-                                    : userAnswers[index] === key && key !== question.correct_answer
+                                    : userAnswers[index] === key && key !== question.correct_option
                                     ? 'border-red-500 bg-red-50'
                                     : 'border-gray-200 bg-gray-50'
                                 }`}
@@ -292,10 +294,10 @@ const QuizMate = () => {
                                 <span className="font-semibold mr-3">{key}.</span> {value}
                                 {userAnswers[index] === key && (
                                   <span className="ml-2 text-sm">
-                                    {key === question.correct_answer ? '✅ Your answer (Correct!)' : '❌ Your answer (Incorrect)'}
+                                    {key === question.correct_option ? '✅ Your answer (Correct!)' : '❌ Your answer (Incorrect)'}
                                   </span>
                                 )}
-                                {key === question.correct_answer && userAnswers[index] !== key && (
+                                {key === question.correct_option && userAnswers[index] !== key && (
                                   <span className="ml-2 text-sm text-green-600">✅ Correct answer</span>
                                 )}
                               </div>
@@ -333,7 +335,7 @@ const QuizMate = () => {
                       <Card key={index} className="border-2 border-emerald-200 bg-emerald-50">
                         <CardHeader>
                           <CardTitle className="text-lg text-gray-800">
-                            Question {index + 1}: {question.question}
+                            Question {index + 1}: {question.question_text}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
