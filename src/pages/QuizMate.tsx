@@ -92,7 +92,7 @@ const QuizMate = () => {
       const response = await fetch('https://agent-prod.studio.lyzr.ai/v3/inference/chat/', {
         method: 'POST',
         headers: {
-          'Content-Type: application/json',
+          'Content-Type': 'application/json',
           'x-api-key': 'sk-default-7JPMVLUFjyEKq2sDaBi3bU3rW2aF9Jrv'
         },
         body: JSON.stringify(requestBody)
