@@ -62,7 +62,7 @@ const QuizMate = () => {
     setProgress(0);
     setCurrentFact(0);
 
-    // Progress animation and fact cycling
+    // Progress animation and fact cycling - changed to 5 seconds
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) return 95;
@@ -72,7 +72,7 @@ const QuizMate = () => {
 
     const factInterval = setInterval(() => {
       setCurrentFact(prev => (prev + 1) % educationalFacts.length);
-    }, 2000);
+    }, 5000); // Changed from 2000 to 5000 (5 seconds)
 
     try {
       const requestBody = {
@@ -103,14 +103,33 @@ const QuizMate = () => {
       }
 
       const data = await response.json();
-      console.log("Lyzr AI response:", data);
+      console.log("Lyzr AI full response:", data);
 
-      // Parse the response - assuming the quiz data is in the response message
+      // Parse the response - try different possible locations for the quiz data
       let quizData: QuizResponse;
-      if (typeof data.response === 'string') {
-        quizData = JSON.parse(data.response);
-      } else {
-        quizData = data.response || data;
+      try {
+        // First try to parse the response field if it's a string
+        if (typeof data.response === 'string') {
+          console.log("Parsing string response:", data.response);
+          quizData = JSON.parse(data.response);
+        } else if (data.response && typeof data.response === 'object') {
+          console.log("Using object response:", data.response);
+          quizData = data.response;
+        } else if (data.message && typeof data.message === 'string') {
+          console.log("Parsing message field:", data.message);
+          quizData = JSON.parse(data.message);
+        } else if (data.message && typeof data.message === 'object') {
+          console.log("Using message object:", data.message);
+          quizData = data.message;
+        } else {
+          console.log("Using data directly:", data);
+          quizData = data;
+        }
+
+        console.log("Parsed quiz data:", quizData);
+      } catch (parseError) {
+        console.error("Error parsing quiz data:", parseError);
+        throw new Error("Failed to parse quiz data from API response");
       }
 
       clearInterval(progressInterval);
