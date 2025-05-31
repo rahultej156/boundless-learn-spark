@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Brain, Lightbulb, Star, BookOpen } from "lucide-react";
+import { ArrowLeft, Brain, Lightbulb, Star, BookOpen, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface QuizQuestion {
@@ -41,6 +41,8 @@ const QuizMate = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentFact, setCurrentFact] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<{[key: number]: string}>({});
+  const [showResults, setShowResults] = useState(false);
 
   const educationalFacts = [
     { icon: Brain, text: "Did you know? Your brain has about 86 billion neurons!", color: "text-purple-600" },
@@ -90,7 +92,7 @@ const QuizMate = () => {
       const response = await fetch('https://agent-prod.studio.lyzr.ai/v3/inference/chat/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type: application/json',
           'x-api-key': 'sk-default-7JPMVLUFjyEKq2sDaBi3bU3rW2aF9Jrv'
         },
         body: JSON.stringify(requestBody)
@@ -118,6 +120,8 @@ const QuizMate = () => {
       setTimeout(() => {
         setQuiz(quizData);
         setIsLoading(false);
+        setUserAnswers({});
+        setShowResults(false);
       }, 500);
 
     } catch (error) {
@@ -150,8 +154,32 @@ const QuizMate = () => {
         setQuiz(mockQuiz);
         setProgress(100);
         setIsLoading(false);
+        setUserAnswers({});
+        setShowResults(false);
       }, 2000);
     }
+  };
+
+  const handleAnswerSelect = (questionIndex: number, answer: string) => {
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionIndex]: answer
+    }));
+  };
+
+  const calculateScore = () => {
+    if (!quiz) return 0;
+    let correctAnswers = 0;
+    quiz.questions.forEach((question, index) => {
+      if (userAnswers[index] === question.correct_answer) {
+        correctAnswers++;
+      }
+    });
+    return correctAnswers;
+  };
+
+  const endQuiz = () => {
+    setShowResults(true);
   };
 
   const CurrentFactIcon = educationalFacts[currentFact].icon;
@@ -207,53 +235,122 @@ const QuizMate = () => {
                     {quiz.input_parameters.subject} • {quiz.input_parameters.topic} • {quiz.input_parameters.difficulty_level} Level
                   </p>
                 </div>
-                
-                {quiz.questions.map((question, index) => (
-                  <Card key={index} className="border-2 border-emerald-200 bg-emerald-50">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-800">
-                        Question {index + 1}: {question.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-3">
-                        {Object.entries(question.options).map(([key, value]) => (
-                          <Button
-                            key={key}
-                            variant="outline"
-                            className={`justify-start text-left p-4 h-auto ${
-                              key === question.correct_answer 
-                                ? 'border-green-500 bg-green-50 hover:bg-green-100' 
-                                : 'hover:bg-gray-50'
-                            }`}
+
+                {showResults ? (
+                  <div className="space-y-6">
+                    <Card className="border-2 border-yellow-200 bg-yellow-50">
+                      <CardHeader className="text-center">
+                        <div className="flex items-center justify-center mb-4">
+                          <Trophy className="w-12 h-12 text-yellow-600" />
+                        </div>
+                        <CardTitle className="text-2xl text-yellow-600">Quiz Results!</CardTitle>
+                        <CardDescription className="text-lg">
+                          You scored {calculateScore()} out of {quiz.questions.length} questions correctly!
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+
+                    {quiz.questions.map((question, index) => (
+                      <Card key={index} className="border-2 border-gray-200">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-800">
+                            Question {index + 1}: {question.question}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid gap-3">
+                            {Object.entries(question.options).map(([key, value]) => (
+                              <div
+                                key={key}
+                                className={`p-4 rounded-lg border-2 ${
+                                  key === question.correct_answer
+                                    ? 'border-green-500 bg-green-50'
+                                    : userAnswers[index] === key && key !== question.correct_answer
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-200 bg-gray-50'
+                                }`}
+                              >
+                                <span className="font-semibold mr-3">{key}.</span> {value}
+                                {userAnswers[index] === key && (
+                                  <span className="ml-2 text-sm">
+                                    {key === question.correct_answer ? '✅ Your answer (Correct!)' : '❌ Your answer (Incorrect)'}
+                                  </span>
+                                )}
+                                {key === question.correct_answer && userAnswers[index] !== key && (
+                                  <span className="ml-2 text-sm text-green-600">✅ Correct answer</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                            <p className="text-sm text-blue-700">
+                              <span className="font-semibold">💡 Explanation:</span> {question.explanation}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    <div className="text-center">
+                      <Button
+                        onClick={() => {
+                          setQuiz(null);
+                          setSubject("");
+                          setTopic("");
+                          setDifficulty("");
+                          setNumQuestions("");
+                          setUserAnswers({});
+                          setShowResults(false);
+                        }}
+                        className="bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 px-8 text-lg rounded-full"
+                      >
+                        🎯 Create Another Quiz
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {quiz.questions.map((question, index) => (
+                      <Card key={index} className="border-2 border-emerald-200 bg-emerald-50">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-800">
+                            Question {index + 1}: {question.question}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <RadioGroup
+                            value={userAnswers[index] || ""}
+                            onValueChange={(value) => handleAnswerSelect(index, value)}
                           >
-                            <span className="font-semibold mr-3">{key}.</span> {value}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                        <p className="text-sm text-blue-700">
-                          <span className="font-semibold">💡 Explanation:</span> {question.explanation}
+                            {Object.entries(question.options).map(([key, value]) => (
+                              <div key={key} className="flex items-center space-x-2 p-2 hover:bg-white rounded">
+                                <RadioGroupItem value={key} id={`q${index}-${key}`} />
+                                <Label htmlFor={`q${index}-${key}`} className="flex-1 cursor-pointer">
+                                  <span className="font-semibold mr-3">{key}.</span> {value}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    <div className="text-center">
+                      <Button
+                        onClick={endQuiz}
+                        disabled={Object.keys(userAnswers).length !== quiz.questions.length}
+                        className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white font-bold py-3 px-8 text-lg rounded-full disabled:opacity-50"
+                      >
+                        🏁 End Quiz & Show Results
+                      </Button>
+                      {Object.keys(userAnswers).length !== quiz.questions.length && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          Please answer all questions to end the quiz
                         </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                <div className="text-center">
-                  <Button
-                    onClick={() => {
-                      setQuiz(null);
-                      setSubject("");
-                      setTopic("");
-                      setDifficulty("");
-                      setNumQuestions("");
-                    }}
-                    className="bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 px-8 text-lg rounded-full"
-                  >
-                    🎯 Create Another Quiz
-                  </Button>
-                </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid gap-6">
